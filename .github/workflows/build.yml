@@ -39,7 +39,13 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
-
+      - name: Access Secrets & Create Properties
+        env:
+          TMDB_KEY: ${{ secrets.TMDB_KEY }}
+        run: |
+          cd $GITHUB_WORKSPACE/src
+          touch local.properties
+          echo "TMDB_KEY=$TMDB_KEY" >> local.properties
       - name: Build Plugins
         run: |
           cd $GITHUB_WORKSPACE/src
