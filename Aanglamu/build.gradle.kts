@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.konan.properties.Properties
+
 dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
@@ -32,9 +34,19 @@ cloudstream {
 }
 
 android {
+    defaultConfig {
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+
+        buildConfigField(
+            "String",
+            "TMDB_KEY",
+            "\"${properties.getProperty("TMDB_KEY")}\""
+        )
+    }
+
     buildFeatures {
         buildConfig = true
         viewBinding = true
     }
-    buildConfigField("String", "TMDB_KEY", "\"${properties.getProperty("TMDB_KEY")}\"")
 }
