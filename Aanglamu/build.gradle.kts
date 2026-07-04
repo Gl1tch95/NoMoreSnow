@@ -9,7 +9,6 @@ version = 1
 cloudstream {
     // All of these properties are optional, you can safely remove any of them.
 
-    langauge = "en"
     description = "English movies and TV shows."
     authors = listOf("Gl1tch95")
 
