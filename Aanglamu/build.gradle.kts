@@ -9,8 +9,9 @@ version = 1
 cloudstream {
     // All of these properties are optional, you can safely remove any of them.
 
-    description = "Lorem ipsum"
-    authors = listOf("Cloudburst", "Luna712")
+    langauge = "en"
+    description = "English movies and TV shows."
+    authors = listOf("Gl1tch95")
 
     /**
     * Status int as one of the following:
@@ -21,13 +22,14 @@ cloudstream {
     **/
     status = 1 // Will be 3 if unspecified
 
-    tvTypes = listOf("Movie")
+    tvTypes = listOf(
+      "Movie",
+      "TvSeries",
+    )
 
     requiresResources = true
-    language = "en"
-
     // Random CC logo I found
-    iconUrl = "https://upload.wikimedia.org/wikipedia/commons/2/2f/Korduene_Logo.png"
+    iconUrl = "https://raw.githubusercontent.com/Gl1tch95/NoMoreSnow/heads/master/Aanglamu/icon.png"
 }
 
 android {

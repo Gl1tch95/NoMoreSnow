@@ -7,13 +7,11 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        // Shitpack repo which contains our tools and dependencies
         maven("https://jitpack.io")
     }
 
     dependencies {
         classpath("com.android.tools.build:gradle:8.7.3")
-        // Cloudstream gradle plugin which makes everything work and builds plugins
         classpath("com.github.recloudstream:gradle:-SNAPSHOT")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
     }
@@ -37,12 +35,12 @@ subprojects {
     apply(plugin = "com.lagradost.cloudstream3.gradle")
 
     cloudstream {
-        // when running through github workflow, GITHUB_REPOSITORY should contain current repository name
         setRepo(System.getenv("GITHUB_REPOSITORY") ?: "user/repo")
+        authors = listOf("Gl1tch95")
     }
 
     android {
-        namespace = "com.example"
+        namespace = "com.nomoresnow"
 
         defaultConfig {
             minSdk = 21
@@ -71,7 +69,6 @@ subprojects {
         val cloudstream by configurations
         val implementation by configurations
 
-        // Stubs for all cloudstream classes
         cloudstream("com.lagradost:cloudstream3:pre-release")
 
         // These dependencies can include any of those which are added by the app,
@@ -86,6 +83,6 @@ subprojects {
     }
 }
 
-task<Delete>("clean") {
+task.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
