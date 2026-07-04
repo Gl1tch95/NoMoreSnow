@@ -1,4 +1,4 @@
-package com.aanglamu
+package com.nomoresnow
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
