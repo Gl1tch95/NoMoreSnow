@@ -36,4 +36,5 @@ android {
         buildConfig = true
         viewBinding = true
     }
+    buildConfigField("String", "TMDB_KEY", "\"${properties.getProperty("TMDB_KEY")}\"")
 }
