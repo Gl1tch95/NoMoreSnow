@@ -4,7 +4,6 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.mvvm.logError
 import com.lagradost.cloudstream3.utils.*
 import org.json.JSONObject
-import android.util.Base64
 
 class Vidking : ExtractorApi() {
     override val name = "Vidking"
@@ -37,7 +36,9 @@ class Vidking : ExtractorApi() {
 
     private fun extractEncryptedPayload(html: String): String? {
         val regex = Regex("""["']([A-Za-z0-9+/=_-]{80,})["']""")
-        return regex.findAll(html).map { it.groupValues[1] }.firstOrNull { it.length > 100 }
+        return regex.findAll(html)
+            .map { it.groupValues[1] }
+            .firstOrNull { it.length > 100 }
     }
 
     private fun extractTmdbId(html: String): Int? {
@@ -49,11 +50,12 @@ class Vidking : ExtractorApi() {
         Regex("""["']?(https?://[^\s"']+\.(m3u8|mp4))["']?""").findAll(html).forEach {
             callback.invoke(
                 ExtractorLink(
-                    name,
-                    "Vidking Direct",
-                    it.groupValues[1],
-                    mainUrl,
-                    Qualities.Unknown.value
+                    source = name,
+                    name = "Vidking Direct",
+                    url = it.groupValues[1],
+                    referer = mainUrl,
+                    quality = Qualities.Unknown.value,
+                    type = ExtractorLinkType.VIDEO
                 )
             )
         }
@@ -74,11 +76,12 @@ class Vidking : ExtractorApi() {
                     if (url.isNotEmpty()) {
                         callback.invoke(
                             ExtractorLink(
-                                name,
-                                "Vidking ${src.optString("quality", "Auto")}",
-                                url,
-                                mainUrl,
-                                getQuality(url)
+                                source = name,
+                                name = "Vidking ${src.optString("quality", "Auto")}",
+                                url = url,
+                                referer = mainUrl,
+                                quality = getQuality(url),
+                                type = ExtractorLinkType.VIDEO
                             )
                         )
                     }
