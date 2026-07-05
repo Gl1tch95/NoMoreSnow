@@ -21,7 +21,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 
 class AanglamuProvider : MainAPI() { // All providers must be an instance of MainAPI
     override var mainUrl = "https://www.themoviedb.org/" 
-    override var name = "AanglamuTMDB"
+    override var name = "Aanglamu"
     override val supportedTypes = setOf(TvType.Movie, TvType.TvSeries)
     override var lang = "en"
     override val hasMainPage = true

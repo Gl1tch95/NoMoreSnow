@@ -161,7 +161,7 @@ class Vidking : ExtractorApi() {
             if (url.contains(".m3u8")) {
                 M3u8Helper.generateM3u8(
                     source = name,
-                    url = url,
+                    streamUrl = url,
                     referer = mainUrl
                 ).forEach(callback)
             } else {
@@ -197,7 +197,7 @@ class Vidking : ExtractorApi() {
                         if (url.contains(".m3u8")) {
                             M3u8Helper.generateM3u8(
                                 source = "$name $serverName",
-                                url = url,
+                                streamUrl = url,
                                 referer = "https://player.videasy.to/",
                                 headers = mapOf(
                                     "Origin" to "https://player.videasy.to",
