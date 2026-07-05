@@ -58,6 +58,30 @@ class Vidking : ExtractorApi() {
         return mp4Keywords.any { o.contains(it) }
     }
 
+    private suspend fun fetchSubtitleAsDataUrl(url: String, headers: Map<String, String>): String? {
+        return try {
+            val response = app.get(url, headers = headers)
+            if (response.isSuccessful) {
+                val text = response.text
+                if (text.isNotEmpty()) {
+                    val mimeType = if (text.trim().startsWith("WEBVTT") || url.contains(".vtt", ignoreCase = true)) {
+                        "text/vtt"
+                    } else {
+                        "application/x-subrip"
+                    }
+                    val base64 = android.util.Base64.encodeToString(
+                        text.toByteArray(Charsets.UTF_8),
+                        android.util.Base64.NO_WRAP
+                    )
+                    "data:$mimeType;base64,$base64"
+                } else null
+            } else null
+        } catch (e: Exception) {
+            logError(e)
+            null
+        }
+    }
+
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -330,13 +354,22 @@ class Vidking : ExtractorApi() {
                         ?: sub.optString("label").takeIf { it.isNotEmpty() }
                         ?: "English"
                     if (url.isNotEmpty()) {
-                        subtitleCallback.invoke(
-                            SubtitleFile(
-                                getLanguage(language) ?: language,
-                                url,
-                                headers = headers
+                        val dataUrl = fetchSubtitleAsDataUrl(url, headers)
+                        if (dataUrl != null) {
+                            subtitleCallback.invoke(
+                                SubtitleFile(
+                                    getLanguage(language) ?: language,
+                                    dataUrl
+                                )
                             )
-                        )
+                        } else {
+                            subtitleCallback.invoke(
+                                SubtitleFile(
+                                    getLanguage(language) ?: language,
+                                    url
+                                )
+                            )
+                        }
                     }
                 }
             }
