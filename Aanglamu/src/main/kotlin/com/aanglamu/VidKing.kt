@@ -10,6 +10,47 @@ class Vidking : ExtractorApi() {
     override val mainUrl = "https://www.vidking.net"
     override val requiresReferer = false
 
+    private val languageMap = mapOf(
+        "English" to listOf("en", "eng"),
+        "Hindi" to listOf("hi", "hin"),
+        "Spanish" to listOf("es", "spa"),
+        "French" to listOf("fr", "fre", "fra"),
+        "German" to listOf("de", "ger", "deu"),
+        "Italian" to listOf("it", "ita"),
+        "Japanese" to listOf("ja", "jpn"),
+        "Korean" to listOf("ko", "kor"),
+        "Chinese" to listOf("zh", "chi", "zho"),
+        "Russian" to listOf("ru", "rus"),
+        "Arabic" to listOf("ar", "ara"),
+        "Portuguese" to listOf("pt", "por"),
+        "Bengali" to listOf("bn", "ben"),
+        "Punjabi" to listOf("pa", "pan"),
+        "Tamil" to listOf("ta", "tam"),
+        "Telugu" to listOf("te", "tel"),
+        "Malayalam" to listOf("ml", "mal"),
+        "Kannada" to listOf("kn", "kan")
+    )
+
+    private fun getLanguage(language: String?): String? {
+        language ?: return null
+        var normalizedLang = if (language.contains("-")) {
+            language.substringBefore("-")
+        } else if (language.contains(" ")) {
+            language.substringBefore(" ")
+        } else if (language.contains("CR_")) {
+            language.substringAfter("CR_")
+        } else {
+            language
+        }
+        if (normalizedLang.isBlank()) {
+            normalizedLang = language
+        }
+        val tag = languageMap.entries.find { entry ->
+            entry.value.contains(normalizedLang.lowercase())
+        }?.key
+        return tag ?: normalizedLang
+    }
+
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -63,7 +104,7 @@ class Vidking : ExtractorApi() {
             }
             val seed = JSONObject(seedRes.text).getString("seed")
 
-            // 3. Query source endpoints sequentially
+            // 3. Query source endpoints sequentially (query all available servers)
             val endpoints = listOf(
                 "cdn/sources-with-title" to "Hydrogen",
                 "tejo/sources-with-title" to "Titanium",
@@ -74,7 +115,6 @@ class Vidking : ExtractorApi() {
 
             var success = false
             for ((endpoint, serverName) in endpoints) {
-                if (success) break
                 try {
                     val queryUrl = "https://api.wingsdatabase.com/$endpoint"
                     val params = mapOf(
@@ -95,7 +135,7 @@ class Vidking : ExtractorApi() {
                         val encryptedPayload = response.text
                         if (encryptedPayload.isNotEmpty()) {
                             val decrypted = ShadowlemonDecryptor.decrypt(encryptedPayload, seed, tmdbId)
-                            parseDecryptedJson(decrypted, callback, subtitleCallback)
+                            parseDecryptedJson(decrypted, serverName, callback, subtitleCallback)
                             success = true
                         }
                     }
@@ -115,24 +155,33 @@ class Vidking : ExtractorApi() {
         }
     }
 
-    private fun extractDirectSources(html: String, callback: (ExtractorLink) -> Unit) {
+    private suspend fun extractDirectSources(html: String, callback: (ExtractorLink) -> Unit) {
         Regex("""["']?(https?://[^\s"']+\.(m3u8|mp4))["']?""").findAll(html).forEach {
             val url = it.groupValues[1]
-            callback.invoke(
-                ExtractorLink(
+            if (url.contains(".m3u8")) {
+                M3u8Helper.generateM3u8(
                     source = name,
-                    name = "Vidking Direct",
                     url = url,
-                    referer = mainUrl,
-                    quality = getQuality("", url),
-                    type = if (url.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
+                    referer = mainUrl
+                ).forEach(callback)
+            } else {
+                callback.invoke(
+                    ExtractorLink(
+                        source = name,
+                        name = "$name Direct",
+                        url = url,
+                        referer = mainUrl,
+                        quality = getQuality("", url),
+                        type = ExtractorLinkType.VIDEO
+                    )
                 )
-            )
+            }
         }
     }
 
-    private fun parseDecryptedJson(
+    private suspend fun parseDecryptedJson(
         jsonStr: String,
+        serverName: String,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
@@ -145,16 +194,29 @@ class Vidking : ExtractorApi() {
                     val url = src.optString("url")
                     val qualityStr = src.optString("quality", "Auto")
                     if (url.isNotEmpty()) {
-                        callback.invoke(
-                            ExtractorLink(
-                                source = name,
-                                name = "Vidking $qualityStr",
+                        if (url.contains(".m3u8")) {
+                            M3u8Helper.generateM3u8(
+                                source = "$name $serverName",
                                 url = url,
-                                referer = mainUrl,
-                                quality = getQuality(qualityStr, url),
-                                type = if (url.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
+                                referer = "https://player.videasy.to/",
+                                headers = mapOf(
+                                    "Origin" to "https://player.videasy.to",
+                                    "Referer" to "https://player.videasy.to/",
+                                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+                                )
+                            ).forEach(callback)
+                        } else {
+                            callback.invoke(
+                                ExtractorLink(
+                                    source = "$name $serverName",
+                                    name = "$name $serverName $qualityStr",
+                                    url = url,
+                                    referer = mainUrl,
+                                    quality = getQuality(qualityStr, url),
+                                    type = ExtractorLinkType.VIDEO
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
@@ -162,9 +224,18 @@ class Vidking : ExtractorApi() {
             json.optJSONArray("subtitles")?.let { subs ->
                 for (i in 0 until subs.length()) {
                     val sub = subs.getJSONObject(i)
-                    subtitleCallback.invoke(
-                        SubtitleFile(sub.optString("label", "Subtitle"), sub.optString("url"))
-                    )
+                    val url = sub.optString("url")
+                    val language = sub.optString("language").takeIf { it.isNotEmpty() }
+                        ?: sub.optString("label").takeIf { it.isNotEmpty() }
+                        ?: "English"
+                    if (url.isNotEmpty()) {
+                        subtitleCallback.invoke(
+                            SubtitleFile(
+                                getLanguage(language) ?: language,
+                                url
+                            )
+                        )
+                    }
                 }
             }
         } catch (e: Exception) {
