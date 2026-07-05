@@ -51,6 +51,13 @@ class Vidking : ExtractorApi() {
         return tag ?: normalizedLang
     }
 
+    private fun isMp4(url: String): Boolean {
+        val o = url.lowercase()
+        if (o.contains(".mp4") || o.contains(".mp4?") || o.contains("video/mp4")) return true
+        val mp4Keywords = listOf("/mp4/", "mp4download", "mp4direct", "directmp4", "mp4stream", "mp4video", "mp4link")
+        return mp4Keywords.any { o.contains(it) }
+    }
+
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -158,21 +165,58 @@ class Vidking : ExtractorApi() {
     private suspend fun extractDirectSources(html: String, callback: (ExtractorLink) -> Unit) {
         Regex("""["']?(https?://[^\s"']+\.(m3u8|mp4))["']?""").findAll(html).forEach {
             val url = it.groupValues[1]
-            if (url.contains(".m3u8")) {
-                M3u8Helper.generateM3u8(
-                    source = name,
-                    streamUrl = url,
-                    referer = mainUrl
-                ).forEach(callback)
+            val isM3u8 = !isMp4(url) || url.contains(".m3u8")
+            val headers = mapOf(
+                "Origin" to "https://player.videasy.to",
+                "Referer" to "https://player.videasy.to/",
+                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+            )
+            if (isM3u8) {
+                try {
+                    val m3uLinks = M3u8Helper.generateM3u8(
+                        source = name,
+                        streamUrl = url,
+                        referer = "https://player.videasy.to/",
+                        headers = headers
+                    )
+                    if (m3uLinks.isNotEmpty()) {
+                        m3uLinks.forEach(callback)
+                    } else {
+                        callback.invoke(
+                            ExtractorLink(
+                                source = name,
+                                name = "$name Direct",
+                                url = url,
+                                referer = "https://player.videasy.to/",
+                                quality = getQuality("", url),
+                                type = ExtractorLinkType.M3U8,
+                                headers = headers
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    callback.invoke(
+                        ExtractorLink(
+                            source = name,
+                            name = "$name Direct",
+                            url = url,
+                            referer = "https://player.videasy.to/",
+                            quality = getQuality("", url),
+                            type = ExtractorLinkType.M3U8,
+                            headers = headers
+                        )
+                    )
+                }
             } else {
                 callback.invoke(
                     ExtractorLink(
                         source = name,
                         name = "$name Direct",
                         url = url,
-                        referer = mainUrl,
+                        referer = "https://player.videasy.to/",
                         quality = getQuality("", url),
-                        type = ExtractorLinkType.VIDEO
+                        type = ExtractorLinkType.VIDEO,
+                        headers = headers
                     )
                 )
             }
@@ -194,26 +238,58 @@ class Vidking : ExtractorApi() {
                     val url = src.optString("url")
                     val qualityStr = src.optString("quality", "Auto")
                     if (url.isNotEmpty()) {
-                        if (url.contains(".m3u8")) {
-                            M3u8Helper.generateM3u8(
-                                source = "$name $serverName",
-                                streamUrl = url,
-                                referer = "https://player.videasy.to/",
-                                headers = mapOf(
-                                    "Origin" to "https://player.videasy.to",
-                                    "Referer" to "https://player.videasy.to/",
-                                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+                        val isM3u8 = !isMp4(url) || url.contains(".m3u8")
+                        val headers = mapOf(
+                            "Origin" to "https://player.videasy.to",
+                            "Referer" to "https://player.videasy.to/",
+                            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+                        )
+                        if (isM3u8) {
+                            try {
+                                val m3uLinks = M3u8Helper.generateM3u8(
+                                    source = "$name $serverName",
+                                    streamUrl = url,
+                                    referer = "https://player.videasy.to/",
+                                    headers = headers
                                 )
-                            ).forEach(callback)
+                                if (m3uLinks.isNotEmpty()) {
+                                    m3uLinks.forEach(callback)
+                                } else {
+                                    callback.invoke(
+                                        ExtractorLink(
+                                            source = "$name $serverName",
+                                            name = "$name $serverName $qualityStr",
+                                            url = url,
+                                            referer = "https://player.videasy.to/",
+                                            quality = getQuality(qualityStr, url),
+                                            type = ExtractorLinkType.M3U8,
+                                            headers = headers
+                                        )
+                                    )
+                                }
+                            } catch (e: Exception) {
+                                callback.invoke(
+                                    ExtractorLink(
+                                        source = "$name $serverName",
+                                        name = "$name $serverName $qualityStr",
+                                        url = url,
+                                        referer = "https://player.videasy.to/",
+                                        quality = getQuality(qualityStr, url),
+                                        type = ExtractorLinkType.M3U8,
+                                        headers = headers
+                                    )
+                                )
+                            }
                         } else {
                             callback.invoke(
                                 ExtractorLink(
                                     source = "$name $serverName",
                                     name = "$name $serverName $qualityStr",
                                     url = url,
-                                    referer = mainUrl,
+                                    referer = "https://player.videasy.to/",
                                     quality = getQuality(qualityStr, url),
-                                    type = ExtractorLinkType.VIDEO
+                                    type = ExtractorLinkType.VIDEO,
+                                    headers = headers
                                 )
                             )
                         }
