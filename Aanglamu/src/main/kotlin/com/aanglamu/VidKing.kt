@@ -103,9 +103,9 @@ class Vidking : ExtractorApi() {
 
     private fun getQuality(url: String): Int {
         return when {
-            url.contains("1080") -> Qualities.Q1080.value
-            url.contains("720") -> Qualities.Q720.value
-            url.contains("480") -> Qualities.Q480.value
+            url.contains("1080") -> Qualities.P1080.value
+            url.contains("720") -> Qualities.P720.value
+            url.contains("480") -> Qualities.P480.value
             else -> Qualities.Unknown.value
         }
     }
