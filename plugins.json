@@ -1,0 +1,23 @@
+[
+    {
+        "iconUrl": "https://raw.githubusercontent.com/Gl1tch95/NoMoreSnow/heads/master/Aanglamu/icon.png",
+        "fileHash": "sha256-f30709e2efdc7f1922d62183f72e967ef375a10e87fc021d71b1535154fd820e",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/Gl1tch95/NoMoreSnow",
+        "fileSize": 71490,
+        "status": 1,
+        "language": "en",
+        "authors": [
+            "Gl1tch95"
+        ],
+        "tvTypes": [
+            "Movie",
+            "TvSeries"
+        ],
+        "version": 1,
+        "internalName": "Aanglamu",
+        "description": "English movies and TV shows.",
+        "url": "https://raw.githubusercontent.com/Gl1tch95/NoMoreSnow/builds/Aanglamu.cs3",
+        "name": "Aanglamu"
+    }
+]

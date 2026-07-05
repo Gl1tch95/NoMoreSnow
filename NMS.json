@@ -1,0 +1,9 @@
+{
+  "name": "NoMoreSnow",
+  "description": "English and Telugu",
+  "iconUrl": "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimages.indianexpress.com%2F2024%2F06%2FA-still-from-Kannappa-teaser.jpg&f=1&nofb=1&ipt=9b858c230a27f681e6ae43d7ea6ec931a9c84586edcab59a01e11f916af93552",
+  "manifestVersion": 2,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/Gl1tch95/NoMoreSnow/builds/plugins.json"
+  ]
+}
