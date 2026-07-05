@@ -23,6 +23,7 @@ cloudstream {
     **/
     status = 1 // Will be 3 if unspecified
 
+    language = "en"
     tvTypes = listOf(
       "Movie",
       "TvSeries",
