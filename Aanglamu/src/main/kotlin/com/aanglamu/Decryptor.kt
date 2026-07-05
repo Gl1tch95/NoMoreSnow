@@ -19,9 +19,9 @@ object ShadowlemonDecryptor {
     private const val _f = 8
     private const val ms = 2654435769u
 
-    fun decrypt(encrypted: String, seed: Int, tmdbId: Int): String {
+    fun decrypt(encrypted: String, seed: String, tmdbId: Int): String {
         val data = xf(encrypted)
-        val keystream = generateKeystream(seed.toString(), tmdbId, data.size)
+        val keystream = generateKeystream(seed, tmdbId, data.size)
 
         for (i in data.indices) {
             data[i] = (data[i].toInt() xor keystream[i].toInt()).toByte()
@@ -85,39 +85,69 @@ object ShadowlemonDecryptor {
         return ui(o)
     }
 
+    private fun Sf(l: Int): Boolean {
+        return ((l.toLong() * (l.toLong() + 1)) and 1L) == 0L
+    }
+
+    private fun bf(l: Int): Boolean {
+        return ((l.toLong() * (l.toLong() + 1)) and 1L) == 1L
+    }
+
+    private fun Af(l: String): Array<UInt?> {
+        val o = Array<UInt?>(256) { it.toUInt() }
+        var e = 0
+        for (i in 0 until 256) {
+            val charCode = l[i % l.length].code
+            val oVal = (o[i] ?: 0u).toInt()
+            e = (e + oVal + charCode) and 255
+            val tmp = o[i]
+            o[i] = o[e]
+            o[e] = tmp
+        }
+        return o
+    }
+
+    private fun vf(l: UInt, o: UInt, e: UInt): UInt {
+        return (l xor o) or (l and o and e)
+    }
+
     private fun Nf(l: String, o: Int): State {
-        val e = IntArray(Js)
+        if (bf(l.length)) {
+            return State(Af(l), If(l))
+        }
+
+        val e = Array<UInt?>(Js) { null }
         var i = ui(wf(l) xor ui(o.toUInt() xor ms))
 
         for (r in 0 until _f) {
-            if ((r * (r + 1) and 1) == 0) {
+            if (Sf(r)) {
                 val n = (i % Js.toUInt()).toInt()
                 i = ps(i + ms, 7 + (r and 7))
-                e[n] = ui(i xor ui(i)).toInt()
+                e[n] = i xor ui(i)
                 i = ui(i + n.toUInt())
             } else {
-                e[r] = jl[r and 15].toInt()
+                e[r] = jl[r and 15]
             }
         }
-        return State(e, ui(i xor 2779096485u).toInt())
+        return State(e, ui(i xor 2779096485u))
     }
 
     private fun Rf(state: State, o: Int): UInt {
         val e = state.S
-        var i = state.acc.toUInt()
+        var i = state.acc
         val r = (i % Js.toUInt()).toInt()
-        val n = if (r in e.indices && e[r] != 0) 0u else (-1).toUInt()
-        val u = e[r].toUInt()
+        val n = if (e[r] != null) 0xFFFFFFFFu else 0u
+        val u = e[r] ?: 0u
         val d = ms * (o + 1).toUInt()
 
-        var g = (i xor u xor d) or (i and u and n)
-        g = ps(g, r and 31) xor ps(i, (r * 7) and 31)
+        var g = vf(i, u xor d, n)
+        g = ps(g + i, r and 31) xor ps(i, (r * 7) and 31)
 
         i = ui(g + ms)
-        e[r] = i.toInt()
-        state.acc = i.toInt()
+        e[r] = i
+        state.acc = i
         return i
     }
 
-    private data class State(val S: IntArray, var acc: Int)
+    private data class State(val S: Array<UInt?>, var acc: UInt)
 }
