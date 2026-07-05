@@ -180,7 +180,19 @@ class Vidking : ExtractorApi() {
                         headers = headers
                     )
                     if (m3uLinks.isNotEmpty()) {
-                        m3uLinks.forEach(callback)
+                        m3uLinks.forEach { link ->
+                            callback.invoke(
+                                ExtractorLink(
+                                    source = link.source,
+                                    name = link.name,
+                                    url = link.url,
+                                    referer = "https://player.videasy.to/",
+                                    quality = link.quality,
+                                    type = link.type,
+                                    headers = headers
+                                )
+                            )
+                        }
                     } else {
                         callback.invoke(
                             ExtractorLink(
@@ -232,6 +244,12 @@ class Vidking : ExtractorApi() {
         try {
             val json = JSONObject(jsonStr)
 
+            val headers = mapOf(
+                "Origin" to "https://player.videasy.to",
+                "Referer" to "https://player.videasy.to/",
+                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+            )
+
             json.optJSONArray("sources")?.let { sources ->
                 for (i in 0 until sources.length()) {
                     val src = sources.getJSONObject(i)
@@ -239,11 +257,6 @@ class Vidking : ExtractorApi() {
                     val qualityStr = src.optString("quality", "Auto")
                     if (url.isNotEmpty()) {
                         val isM3u8 = !isMp4(url) || url.contains(".m3u8")
-                        val headers = mapOf(
-                            "Origin" to "https://player.videasy.to",
-                            "Referer" to "https://player.videasy.to/",
-                            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
-                        )
                         if (isM3u8) {
                             try {
                                 val m3uLinks = M3u8Helper.generateM3u8(
@@ -253,7 +266,19 @@ class Vidking : ExtractorApi() {
                                     headers = headers
                                 )
                                 if (m3uLinks.isNotEmpty()) {
-                                    m3uLinks.forEach(callback)
+                                    m3uLinks.forEach { link ->
+                                        callback.invoke(
+                                            ExtractorLink(
+                                                source = link.source,
+                                                name = link.name,
+                                                url = link.url,
+                                                referer = "https://player.videasy.to/",
+                                                quality = link.quality,
+                                                type = link.type,
+                                                headers = headers
+                                            )
+                                        )
+                                    }
                                 } else {
                                     callback.invoke(
                                         ExtractorLink(
@@ -308,7 +333,8 @@ class Vidking : ExtractorApi() {
                         subtitleCallback.invoke(
                             SubtitleFile(
                                 getLanguage(language) ?: language,
-                                url
+                                url,
+                                headers = headers
                             )
                         )
                     }
